@@ -30,7 +30,7 @@ Make sure the following tools are installed **on your host machine**:
 ### 📥 Clone the Repository
 
 ```bash
-git clone [https://github.com/YOUR\_USERNAME/cvx-optimization-to-ml.git](https://github.com/YOUR_USERNAME/cvx-optimization-to-ml.git)
+git clone https://github.com/evya1/cvx-optimization-to-ml.git
 cd cvx-optimization-to-ml
 ```
 
