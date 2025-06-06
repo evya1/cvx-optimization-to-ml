@@ -148,12 +148,6 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ---
 
-## 📝 License
-
-MIT License (or specify your own).
-
----
-
 ## 🙌 Acknowledgments
 
 -   [msolve authors](https://msolve.lip6.fr/)
