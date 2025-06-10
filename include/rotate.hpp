@@ -1,17 +1,25 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <stdexcept>
 
 template <typename Scalar>
 using Vec2 = Eigen::Matrix<Scalar, 2, 1>;
 template <typename Scalar>
 using Mat2 = Eigen::Matrix<Scalar, 2, 2>;
 
-
 // Rotates w/||w|| to u/||u|| by constructing the SO(2) rotation matrix
 template <typename Scalar>
 Mat2<Scalar> rotate(const Vec2<Scalar>& w, const Vec2<Scalar>& u)
 {
+
+    // Use an appropriate epsilon for floating-point comparison
+    constexpr Scalar epsilon = Scalar(1e-10);
+    if (w.isZero(epsilon) || u.isZero(epsilon))
+    {
+        throw std::invalid_argument("Input vector is zero; cannot normalize.");
+    }
+
     // Step 1: Normalize both w,u
     Vec2<Scalar> w_norm = w.normalized();
     Vec2<Scalar> u_norm = u.normalized();
@@ -27,6 +35,6 @@ Mat2<Scalar> rotate(const Vec2<Scalar>& w, const Vec2<Scalar>& u)
     w_Jw << w_norm, J * w_norm;
 
     // Step 4: Return rotation matrix U
-    Mat2<Scalar> U = u_Ju * w_Jw.transpose() ;
+    Mat2<Scalar> U = u_Ju * w_Jw.transpose();
     return U;
 }
