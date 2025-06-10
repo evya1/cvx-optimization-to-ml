@@ -8,7 +8,6 @@ include_directories(${EIGEN3_INCLUDE_DIRS})
 
 add_executable(cvx-optimization-to-ml
         src/main.cpp
-        src/rotate.cpp
 )
 
 target_include_directories(cvx-optimization-to-ml PRIVATE include)
