@@ -22,10 +22,11 @@ Mat2<Scalar> rotate(const Vec2<Scalar>& w, const Vec2<Scalar>& u)
         Scalar(1), Scalar(0);
 
     // Step 3: Form W and U matrices
-    Mat2<Scalar> W, U;
-    W << w_norm, J * w_norm;
-    U << u_norm, J * u_norm;
+    Mat2<Scalar> u_Ju, w_Jw;
+    u_Ju << u_norm, J * u_norm;
+    w_Jw << w_norm, J * w_norm;
 
-    // Step 4: Return rotation matrix
-    return U * W.transpose();
+    // Step 4: Return rotation matrix U
+    Mat2<Scalar> U = u_Ju * w_Jw.transpose() ;
+    return U;
 }
