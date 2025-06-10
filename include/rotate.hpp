@@ -8,7 +8,13 @@ using Vec2 = Eigen::Matrix<Scalar, 2, 1>;
 template <typename Scalar>
 using Mat2 = Eigen::Matrix<Scalar, 2, 2>;
 
-// Rotates w/||w|| to u/||u|| by constructing the SO(2) rotation matrix
+/**
+ * Constructs the unique SO(2) rotation matrix that maps the direction of vector w to that of vector u.
+ * @param w Input 2D vector to rotate from.
+ * @param u Input 2D vector to rotate to.
+ * @return The SO(2) rotation matrix.
+ * @throws std::invalid_argument if either input vector is zero and cannot be normalized.
+ */
 template <typename Scalar>
 Mat2<Scalar> rotate(const Vec2<Scalar>& w, const Vec2<Scalar>& u)
 {
