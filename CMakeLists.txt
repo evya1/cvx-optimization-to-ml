@@ -10,4 +10,9 @@ add_executable(cvx-optimization-to-ml
         src/main.cpp
 )
 
+add_executable(test-rotate
+        tests/test_rotate.cpp
+)
+
 target_include_directories(cvx-optimization-to-ml PRIVATE include)
+target_include_directories(test-rotate PRIVATE include)

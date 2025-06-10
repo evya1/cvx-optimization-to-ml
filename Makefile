@@ -46,10 +46,9 @@ rebuild: clean build
 
 # ========== Testing & Formatting ==========
 
-test:
-	@echo "🧪 (TODO) Add test framework support"
-	@echo "Running test stub..."
-	$(CXX) -std=c++$(CXX_STD) $(TEST_DIR)/test_rotate.cpp -I$(INCLUDE_DIR) -o $(BUILD_DIR)/test_rotate && $(BUILD_DIR)/test_rotate
+test: build
+	@echo "🧪 Running test-rotate using CMake build system"
+	$(BUILD_DIR)/test-rotate
 
 dev: test run
 
