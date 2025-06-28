@@ -3,8 +3,19 @@ project(cvx-optimization-to-ml)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# --- Diagnostic Info (Optional but helpful) ---
+message(STATUS "Using CMake generator: ${CMAKE_GENERATOR}")
+message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Project root: ${PROJECT_SOURCE_DIR}")
+
 # --- Find Eigen ---
-find_package(Eigen3 REQUIRED HINTS /opt/homebrew/share/eigen3 /opt/homebrew/include/eigen3)
+if(APPLE)
+    find_package(Eigen3 REQUIRED HINTS /opt/homebrew/share/eigen3 /opt/homebrew/include/eigen3)
+else()
+    find_package(Eigen3 REQUIRED)
+endif()
 
 if (TARGET Eigen3::Eigen)
     get_target_property(EIGEN3_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
@@ -13,7 +24,6 @@ else()
     message(FATAL_ERROR "Could not find Eigen3::Eigen target")
 endif()
 
-
 # --- Main Executable ---
 add_executable(cvx-optimization-to-ml src/main.cpp)
 target_include_directories(cvx-optimization-to-ml PRIVATE
@@ -21,8 +31,6 @@ target_include_directories(cvx-optimization-to-ml PRIVATE
         ${PROJECT_SOURCE_DIR}/include
 )
 target_link_libraries(cvx-optimization-to-ml PRIVATE Eigen3::Eigen)
-
-message(STATUS "Root: ${PROJECT_SOURCE_DIR}")
 
 # === Testing Setup ===
 enable_testing()
