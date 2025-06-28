@@ -2,7 +2,7 @@
 #include <Eigen/Dense>
 #include <cassert>
 #include <cmath>
-#include "rotate.hpp"
+#include "../include/rotate.hpp"
 
 using Vec2d = Vec2<double>;
 using Mat2d = Mat2<double>;
