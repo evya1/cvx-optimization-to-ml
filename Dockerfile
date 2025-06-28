@@ -42,6 +42,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy final binary and msolve tool
 COPY --from=builder /app/build/cvx-optimization-to-ml /cvx-optimization-to-ml
+COPY --from=builder /app/build/test-runner /test-runner
 COPY --from=builder /usr/local/lib/libmsolve* /usr/local/lib/
 COPY --from=builder /usr/local/bin/msolve /usr/local/bin/msolve
 COPY --from=builder /usr/local/lib/libflint* /usr/local/lib/

@@ -47,8 +47,8 @@ rebuild: clean build
 # ========== Testing & Formatting ==========
 
 test: build
-	@echo "🧪 Running test-rotate using CMake build system"
-	$(BUILD_DIR)/test-rotate
+	@echo "🧪 Running all unit tests..."
+	./$(BUILD_DIR)/test-runner
 
 dev: test run
 
@@ -63,6 +63,9 @@ docker-run: docker
 	@echo "🐋 Running in Docker..."
 	docker run --rm --name $(DOCKER_CONTAINER) $(DOCKER_IMAGE)
 
+docker-run-tests: docker
+	@echo "🧪 Running tests inside Docker..."
+	docker run --rm $(DOCKER_IMAGE) /test-runner
 
 docker-clean:
 	@echo "🧹 Cleaning Docker image and stopped containers..."
@@ -80,6 +83,8 @@ docker-run-msolve:
 		-v $(PWD)/ms_outputs:/outputs \
 		$(DOCKER_IMAGE) msolve -f /inputs/in.ms -o /outputs/out.ms
 
+docker-shell: docker
+	docker run --rm -it --entrypoint /bin/bash -v $(PWD):/app $(DOCKER_IMAGE)
 
 
 msolve-test-real-roots-sec4p1: docker
@@ -111,6 +116,8 @@ endef
 msolve-run-%:
 	$(call RUN_MSOLVE,$*.ms,$*.out)
 
+ci: docker-rebuild docker-run-tests docker-run
+	@echo "✅ CI validation complete."
 
 help:
 	@echo "Usage:"
