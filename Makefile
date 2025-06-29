@@ -21,8 +21,12 @@ MS_OUTPUT_FILE := $(MS_OUTPUT_DIR)/real_roots_sec4p1.out
 
 # ========== Core Targets ==========
 
-.PHONY: build run clean rebuild test dev docker docker-run docker-clean docker-rebuild \
-        msolve-test-real-roots-sec4p1 docker-run-msolve show-msolve-output-sec4p1
+.PHONY: all build run clean rebuild test dev help
+.PHONY: docker docker-run docker-clean docker-rebuild docker-run-tests docker-shell
+.PHONY: docker-run-msolve msolve-test-real-roots-sec4p1 show-msolve-output-sec4p1
+.PHONY: msolve-run-% ci
+
+# ========== Build & Run Targets ==========
 
 all: build
 
@@ -44,17 +48,16 @@ clean:
 
 rebuild: clean build
 
-# ========== Testing & Formatting ==========
+# ========== Development Utilities ==========
 
-test:
-	@echo "🧪 (TODO) Add test framework support"
-	@echo "Running test stub..."
-	$(CXX) -std=c++$(CXX_STD) $(TEST_DIR)/test_rotate.cpp -I$(INCLUDE_DIR) -o $(BUILD_DIR)/test_rotate && $(BUILD_DIR)/test_rotate
+test: build
+	@echo "🧪 Running all unit tests..."
+	./$(BUILD_DIR)/test-runner
 
 dev: test run
 
 
-# ========== Docker Targets ==========
+# ========== Docker Image & Container ==========
 
 docker:
 	@echo "🐳 Building Docker image..."
@@ -64,6 +67,12 @@ docker-run: docker
 	@echo "🐋 Running in Docker..."
 	docker run --rm --name $(DOCKER_CONTAINER) $(DOCKER_IMAGE)
 
+docker-run-tests: docker
+	@echo "🧪 Running tests inside Docker..."
+	docker run --rm $(DOCKER_IMAGE) /test-runner
+
+docker-shell: docker
+	docker run --rm -it --entrypoint /bin/bash -v $(PWD):/app $(DOCKER_IMAGE)
 
 docker-clean:
 	@echo "🧹 Cleaning Docker image and stopped containers..."
@@ -74,14 +83,14 @@ docker-rebuild:
 	$(MAKE) docker-clean
 	$(MAKE) docker
 
+# ========== msolve Integration ==========
+
 docker-run-msolve:
 	@mkdir -p ms_outputs
 	docker run --rm \
 		-v $(PWD)/ms_test_inputs:/inputs \
 		-v $(PWD)/ms_outputs:/outputs \
 		$(DOCKER_IMAGE) msolve -f /inputs/in.ms -o /outputs/out.ms
-
-
 
 msolve-test-real-roots-sec4p1: docker
 	@mkdir -p ms_test_inputs
@@ -112,25 +121,38 @@ endef
 msolve-run-%:
 	$(call RUN_MSOLVE,$*.ms,$*.out)
 
+# ========== CI & Meta Targets ==========
+
+ci: docker-rebuild docker-run-tests docker-run
+	@echo "✅ CI validation complete."
 
 help:
 	@echo "Usage:"
 	@echo "  make [target]"
 	@echo ""
-	@echo "Core Targets:"
+	@echo "Build & Run:"
 	@echo "  build           Build the project using CMake"
 	@echo "  run             Run the compiled binary"
 	@echo "  clean           Remove build artifacts"
 	@echo "  rebuild         Clean and rebuild"
 	@echo ""
-	@echo "Utility Targets:"
-	@echo "  test            Run unit tests (if any)"
-	@echo "  format          Format all source files"
+	@echo "Testing:"
+	@echo "  test            Run unit tests"
+	@echo "  dev             Run unit tests and then main binary"
 	@echo ""
-	@echo "Docker Targets:"
+	@echo "Docker:"
 	@echo "  docker          Build Docker image"
-	@echo "  docker-run      Run the image (default binary)"
-	@echo "  docker-clean    Remove Docker containers/images"
-	@echo "  msolve-test-real-roots-sec4p1  Run msolve on real root example from Section 4.1"
-	@echo "  show-msolve-output-sec4p1      Show output result of the msolve test"
+	@echo "  docker-run      Run binary inside Docker"
+	@echo "  docker-run-tests Run tests inside Docker"
+	@echo "  docker-shell    Drop into an interactive shell inside the container"
+	@echo "  docker-clean    Remove Docker container/image"
+	@echo "  docker-rebuild  Clean and rebuild Docker image"
+	@echo ""
+	@echo "msolve:"
+	@echo "  msolve-test-real-roots-sec4p1     Run msolve on predefined input"
+	@echo "  show-msolve-output-sec4p1         Show msolve result output"
+	@echo "  msolve-run-<name>                 Run msolve on a .ms file by name"
+	@echo ""
+	@echo "CI:"
+	@echo "  ci              Full Docker-based validation (build + test + run)"
 
