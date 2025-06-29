@@ -1,3 +1,4 @@
+#include <iostream>
 #include <catch2/catch_test_macros.hpp>
 #include <Eigen/Dense>
 #include "../include/rotate.hpp"
@@ -84,4 +85,24 @@ TEST_CASE("rotate() throws on zero vector input") {
     Vec2d zero(0, 0), u(1, 0), w(1, 0);
     REQUIRE_THROWS_AS(rotate(zero, u), std::invalid_argument);
     REQUIRE_THROWS_AS(rotate(w, zero), std::invalid_argument);
+}
+
+TEST_CASE("rotate maps (1,0) to (1,1)^T normalized") {
+    Vec2d w(1, 0), u(3, 3);
+    Vec2d w_unit = w.normalized();
+    Vec2d u_unit = u.normalized();
+
+    Mat2d U = rotate(w_unit, u_unit);
+    Vec2d result = U * w_unit;
+
+    REQUIRE(isApprox(result, u_unit));
+    REQUIRE(U.isUnitary(1e-12));
+
+    Mat2d expected_U;
+    expected_U << 1, -1,
+                  1,  1;
+    expected_U.col(0).normalize();
+    expected_U.col(1).normalize();
+
+    REQUIRE(isApprox(U, expected_U));
 }

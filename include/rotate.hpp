@@ -9,11 +9,33 @@ template <typename Scalar>
 using Mat2 = Eigen::Matrix<Scalar, 2, 2>;
 
 /**
- * Constructs the unique SO(2) rotation matrix that maps the direction of vector w to that of vector u.
- * @param w Input 2D vector to rotate from.
- * @param u Input 2D vector to rotate to.
- * @return The SO(2) rotation matrix.
- * @throws std::invalid_argument if either input vector is zero and cannot be normalized.
+* Returns the unique matrix U ∈ SO(2) ⊂ ℝ²×² such that:
+ *     U ( w / ∥w∥ ) = u / ∥u∥
+ *
+ * Here, SO(2) denotes the group of 2×2 real rotation matrices:
+ *     SO(2) := { R ∈ ℝ²×² | RᵀR = I, det(R) = 1 }.
+ *
+ * The rotation is constructed as:
+ *     U := [û, Jû] · [ŵ, Jŵ]ᵀ
+ * where ŵ := w / ∥w∥, û := u / ∥u∥, and J := [0 −1; 1 0].
+ *
+ * @tparam Scalar The scalar type (e.g., float, double).
+ * @param w A non-zero 2D input vector to rotate from.
+ * @param u A non-zero 2D input vector to rotate to.
+ * @return A 2×2 special orthogonal matrix that rotates `w` to `u`.
+ * @throws std::invalid_argument if `w` or `u` is the zero vector (norm == 0).
+ *
+ * @example
+ *     Vec2d w(1, 0);       // x-axis
+ *     Vec2d u(0, 1);       // y-axis
+ *     Mat2d U = rotate(w, u);
+ *     // U should be a 90-degree counterclockwise rotation matrix:
+ *     // [
+ *     //     0  -1
+ *     //     1   0
+ *     // ]
+ *     Vec2d rotated = U * w.normalized();
+ *     // rotated ≈ u.normalized() => [0, 1]
  */
 template <typename Scalar>
 Mat2<Scalar> rotate(const Vec2<Scalar>& w, const Vec2<Scalar>& u)
