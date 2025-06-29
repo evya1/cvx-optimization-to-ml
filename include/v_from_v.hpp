@@ -1,10 +1,10 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <stdexcept>
 #include <cmath>
 #include "rotate.hpp"
 
+// Generic type aliases
 template <typename Scalar>
 using VecD = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 
@@ -17,69 +17,66 @@ using Vec2 = Eigen::Matrix<Scalar, 2, 1>;
 template <typename Scalar>
 using Mat2 = Eigen::Matrix<Scalar, 2, 2>;
 
+// Traits for deducing Scalar and applying aliases inside templated functions
+template <typename Derived>
+struct EigenTraits {
+    using Scalar = typename Derived::Scalar;
+    using VecD   = ::VecD<Scalar>;
+    using MatD   = ::MatD<Scalar>;
+    using Vec2   = ::Vec2<Scalar>;
+    using Mat2   = ::Mat2<Scalar>;
+};
 
 /**
  * @brief Constructs matrix V(v) ∈ ℝᵈ×² as defined in Algorithm 2.
  *
- * Given p, q ∈ ℝᵈ (non-zero and linearly independent), and a point v ∈ sp{p, q}, this algorithm returns
- * a matrix V(v) ∈ ℝᵈ×² such that for any R ∈ SO(p, q), the translation t = V(v)g(R) - Rv maps
- * the alignment [R | t] ∈ SOA(p, q).
+ * Accepts both fixed-size and dynamic column vectors p, q, v ∈ ℝᵈ.
+ * Computes a matrix V ∈ ℝᵈ×² such that for any R ∈ SO(p,q), the translation
+ * t = V(v)g(R) - Rv ensures alignment [R | t] ∈ SOA(p,q).
  *
- * @param p Non-zero vector in ℝ^d.
- * @param q Vector not in the span of p.
- * @param v A vector in the plane spanned by {p, q}.
- * @return Matrix of size d×2 defining the affine map for the translation t.
+ * @return Matrix of size d×2.
  */
-template <typename Scalar>
-MatD<Scalar> v_from_v(const VecD<Scalar>& p, const VecD<Scalar>& q, const VecD<Scalar>& v)
+template <typename Derived>
+auto v_from_v(const Derived& p, const Derived& q, const Derived& v)
+-> typename EigenTraits<Derived>::MatD
 {
-    using std::sqrt;
-    const int d = p.size();
-    if (d != q.size() || d != v.size()) {
-        throw std::invalid_argument("Vectors p, q, and v must have the same dimension.");
-    }
+    using T = EigenTraits<Derived>;
+    using Scalar = typename T::Scalar;
 
-    // Step 1: Orthonormal columns for matrix F ∈ ℝᵈ×²
-    VecD<Scalar> p_norm = p.normalized();
-    VecD<Scalar> proj_q_on_p = p_norm * (p_norm.dot(q));
+    const int d = p.rows();
+    if (d != q.rows() || d != v.rows() || p.cols() != 1 || q.cols() != 1 || v.cols() != 1)
+        throw std::invalid_argument("All inputs must be column vectors of the same dimension.");
 
-    VecD<Scalar> q_orth = q - proj_q_on_p;
-    Scalar norm_q_orth = q_orth.norm();
+    typename T::VecD p_norm = p.normalized();
+    typename T::VecD proj_q = p_norm * (p_norm.dot(q));
+    typename T::VecD q_orth = q - proj_q;
 
-    if (norm_q_orth == Scalar(0)) {
+    Scalar q_orth_norm = q_orth.norm();
+    if (q_orth_norm == Scalar(0))
         throw std::invalid_argument("Vectors p and q must be linearly independent.");
-    }
-    q_orth /= norm_q_orth;
+    q_orth /= q_orth_norm;
 
-    MatD<Scalar> F(d, 2);
-    F.col(0) = p_norm;
-    F.col(1) = q_orth;
+    typename T::MatD F(d, 2);
+    F << p_norm, q_orth;
 
-    // Step 2: Project p, q, v into 2D
-    Vec2<Scalar> p_prime = F.transpose() * p;
-    Vec2<Scalar> q_prime = F.transpose() * q;
-    Vec2<Scalar> v_prime = F.transpose() * v;
+    typename T::Vec2 p2 = F.transpose() * p;
+    typename T::Vec2 q2 = F.transpose() * q;
+    typename T::Vec2 v2 = F.transpose() * v;
 
-    // Step 3: Construct U ∈ SO(2) or zero
-    Mat2<Scalar> U = Mat2<Scalar>::Zero();
-    if (!v_prime.isApprox(q_prime)) {
-        Vec2<Scalar> w = p_prime - q_prime;
-        Vec2<Scalar> u = v_prime - q_prime;
-        U = rotate(w, u);
-    }
+    // FIX: Removed `typename` before static function call `Zero()`
+    typename T::Mat2 U = T::Mat2::Zero();
+    if (!v2.isApprox(q2))
+        U = rotate(p2 - q2, v2 - q2);
 
-    // Step 4: Compute scalar c
-    Scalar c = (v_prime - q_prime).norm() / (p_prime - q_prime).norm();
+    Scalar c = (v2 - q2).norm() / (p2 - q2).norm();
 
-    // Step 5: Construct final V(v) matrix
-    Mat2<Scalar> M;
-    M.col(0) = c * U * p_prime;
-    M.col(1) = (c * U - Mat2<Scalar>::Identity()) * q_prime;
+    typename T::Mat2 M;
 
-    Mat2<Scalar> pq_prime;
-    pq_prime.col(0) = p_prime;
-    pq_prime.col(1) = q_prime;
+    M.col(0) = c * U * p2;
+    M.col(1) = (c * U - T::Mat2::Identity()) * q2;
 
-    MatD<Scalar> V = (p - q).norm() * F * M * pq_prime.inverse();
-    return V;
+    typename T::Mat2 PQ;
+    PQ << p2, q2;
+
+    return (p - q).norm() * F * M * PQ.inverse();
 }
