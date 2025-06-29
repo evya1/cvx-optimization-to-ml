@@ -9,6 +9,13 @@ RUN apt-get update && apt-get install -y \
     libeigen3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Catch2 from source
+RUN git clone --branch v3.5.4 https://github.com/catchorg/Catch2.git /opt/catch2 \
+    && cd /opt/catch2 \
+    && cmake -Bbuild -H. \
+    && cmake --build build --target install
+
+
 # === Build FLINT 2.x ===
 WORKDIR /opt
 RUN git clone https://github.com/wbhart/flint2.git \

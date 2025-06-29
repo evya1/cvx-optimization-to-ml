@@ -35,16 +35,21 @@ target_link_libraries(cvx-optimization-to-ml PRIVATE Eigen3::Eigen)
 # === Testing Setup ===
 enable_testing()
 
-# --- Automatically find all .cpp files in tests/ ---
-file(GLOB TEST_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/tests/*.cpp)
+include(FetchContent)
+FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.4
+)
+FetchContent_MakeAvailable(Catch2)
 
-# --- Combine them into a single test-runner executable ---
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/tests/*.cpp)
 add_executable(test-runner ${TEST_SOURCES})
 target_include_directories(test-runner PRIVATE
         ${Eigen3_INCLUDE_DIRS}
         ${PROJECT_SOURCE_DIR}/include
 )
-target_link_libraries(test-runner PRIVATE Eigen3::Eigen)
+target_link_libraries(test-runner PRIVATE Catch2::Catch2WithMain Eigen3::Eigen)
 
-# --- Register test-runner with CTest ---
-add_test(NAME all-tests COMMAND test-runner)
+include(Catch)
+catch_discover_tests(test-runner)
