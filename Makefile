@@ -147,6 +147,27 @@ run-e2e-pipeline: build
 msolve-run-%:
 	$(call RUN_MSOLVE,$*.ms,$*.out)
 
+# ========== Local Sanity Pipeline ==========
+
+# Build and run C++ exporter to JSON
+local-fg-json: build
+	@echo "🔧 [Local] Running fg_to_json to export F, G, c..."
+	./$(BUILD_DIR)/fg_to_json
+
+# Run SymPy + msolve locally (you must have msolve installed natively)
+local-solve:
+	@echo "🧠 [Local] Running SymPy pipeline + msolve..."
+	python3 scripts/run_eq172_pipeline.py
+
+# Full local end-to-end run
+run-local-pipeline: local-fg-json local-solve
+	@echo "📄 [Local] Displaying symbolic equations (.ms):"
+	cat ms_test_inputs/eq172_input.ms
+	@echo "\n🧾 [Local] Displaying msolve output:"
+	cat ms_outputs/eq172_input.out
+	@echo "\n✅ [Local] End-to-end pipeline complete."
+
+
 # ========== CI & Meta Targets ==========
 
 ci: docker-rebuild run-pipeline-eq172 docker-run-tests docker-run
