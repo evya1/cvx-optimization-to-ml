@@ -12,9 +12,22 @@ import os
 import json
 import subprocess
 from sympy import Matrix, symbols, simplify, expand
+from pathlib import Path
+
+# --- Define project paths relative to this script's location ---
+# This new section makes the script work everywhere.
+script_dir = Path(__file__).parent
+project_root = (script_dir / "..").resolve()
+
+# --- Use the dynamic project_root to define paths ---
+params_path = project_root / "inputs" / "eq172_params.json"
+ms_test_inputs_dir = project_root / "ms_test_inputs"
+ms_outputs_dir = project_root / "ms_outputs"
+ms_path = ms_test_inputs_dir / "eq172_input.ms"
+ms_output_path = ms_outputs_dir / "eq172_input.out"
 
 # ----------- Load parameters -----------
-params_path = "/app/inputs/eq172_params.json"
+print(f"[i] Reading parameters from: {params_path}")
 with open(params_path, "r") as f:
     params = json.load(f)
 
@@ -39,8 +52,7 @@ constraints = [x1**2 + x2**2 - 1, y1**2 + y2**2 - 1]
 equations = grad_x + grad_y + constraints
 
 # ----------- Export to .ms file -----------
-os.makedirs("/app/ms_test_inputs", exist_ok=True)
-ms_path = "/app/ms_test_inputs/eq172_input.ms"
+os.makedirs(ms_test_inputs_dir, exist_ok=True)
 
 with open(ms_path, "w") as f:
     f.write("x1,x2,y1,y2,lam1,lam2\n")
@@ -52,12 +64,11 @@ with open(ms_path, "w") as f:
 print(f"[✓] .ms file written to {ms_path}")
 
 # ----------- Call msolve -----------
-os.makedirs("/app/ms_outputs", exist_ok=True)
-ms_output_path = "/app/ms_outputs/eq172_input.out"
+os.makedirs(ms_outputs_dir, exist_ok=True)
 subprocess.run([
     "msolve",
-    "-f", ms_path,
-    "-o", ms_output_path
+    "-f", str(ms_path),
+    "-o", str(ms_output_path)
 ], check=True)
 
 print(f"[✓] msolve output saved to {ms_output_path}")
