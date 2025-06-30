@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <cmath>
 #include "rotate.hpp"
 
 // Generic type aliases
@@ -63,19 +62,22 @@ auto v_from_v(const Derived& p, const Derived& q, const Derived& v)
     using Scalar = typename T::Scalar;
 
     const int d = p.rows();
-    const bool ValidInputDim = d != q.rows() || d != v.rows() || p.cols() != 1 || q.cols() != 1 || v.cols() != 1;
-    if (ValidInputDim)
+    const auto has_invalid_input_dimensions = d != q.rows() || d != v.rows() || p.cols() != 1 || q.cols() != 1 || v.cols() != 1;
+    if (has_invalid_input_dimensions)
         throw std::invalid_argument("All inputs must be column vectors of the same dimension.");
 
     // Step 1: Create an orthonormal basis F for plane sp{p, q}.
-    typename T::VecD p_norm = p.normalized();
+    const auto is_p_zero_vector = p.norm() < std::numeric_limits<Scalar>::epsilon();
+    if (is_p_zero_vector)
+        throw std::invalid_argument("Vector p must be non-zero.");
+    auto p_norm = p.normalized();
     typename T::VecD proj_q = p_norm * (p_norm.dot(q));
     typename T::VecD q_orth = q - proj_q;
 
     // Ensure p and q are not collinear by checking the norm of the orthogonal part.
-    Scalar q_orth_norm = q_orth.norm();
-    auto ZeroNorm = q_orth_norm < std::numeric_limits<Scalar>::epsilon();
-    if (ZeroNorm)
+    const auto q_orth_norm = q_orth.norm();
+    const auto is_q_orthogonal_zero = q_orth_norm < std::numeric_limits<Scalar>::epsilon();
+    if (is_q_orthogonal_zero)
         throw std::invalid_argument("Vectors p and q must be linearly independent.");
 
     // Normalize the orthogonal part to get the second basis vector.
@@ -87,33 +89,30 @@ auto v_from_v(const Derived& p, const Derived& q, const Derived& v)
 
     // Step 2: Project the d-dimensional vectors into the 2D basis F.
     const auto FT = F.transpose();
-
-    typename T::Vec2 p2 = FT * p;
-    typename T::Vec2 q2 = FT * q;
-    typename T::Vec2 v2 = FT * v;
+    const auto p_2d = FT * p;
+    const auto q_2d = FT * q;
+    const auto v_2d = FT * v;
 
     // Step 3: Compute the 2D rotation matrix U that aligns (v2 - q2) with (p2 - q2).
-    typename T::Mat2 U = T::Mat2::Identity();
-    auto v2_inequal_q2 = !v2.isApprox(q2);
-    if (v2_inequal_q2) {
-        U = rotate(p2 - q2, v2 - q2);
+    typename T::Mat2 rotation_2d = T::Mat2::Identity();
+    const auto is_v2_distinct_from_q2 = !v_2d.isApprox(q_2d);
+    if (is_v2_distinct_from_q2) {
+        rotation_2d = rotate(p_2d - q_2d, v_2d - q_2d);
     }
 
     // Step 4: Calculate the scaling factor 'c' and the intermediate matrix M.
-    Scalar c = (v2 - q2).norm() / (p2 - q2).norm();
+    const auto c = (v_2d - q_2d).norm() / (p_2d - q_2d).norm();
 
-    typename T::Mat2 M;
-    // The columns of M are derived from the alignment logic in 2D.
-    M.col(0) = c * U * p2;
-    M.col(1) = (c * U - T::Mat2::Identity()) * q2;
+    typename T::Mat2 alignment_matrix;
+    alignment_matrix.col(0) = c * rotation_2d * p_2d;
+    alignment_matrix.col(1) = (c * rotation_2d - T::Mat2::Identity()) * q_2d;
 
     // The 2x2 matrix [p2, q2] represents the change of basis matrix in 2D.
-    typename T::Mat2 PQ;
-    PQ << p2, q2;
+    const auto change_of_basis = (typename T::Mat2() << p_2d, q_2d).finished();
 
 
     // Step 5: Construct the final matrix V by mapping the 2D solution back to d-dimensions.
     // The final result is scaled by the norm of (p-q) as per the algorithm's definition.
-    auto V = (p - q).norm() * F * M * PQ.inverse();
+    const auto V = (p - q).norm() * F * alignment_matrix * change_of_basis.inverse();
     return V;
 }
