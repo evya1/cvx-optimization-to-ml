@@ -38,6 +38,33 @@ namespace detail {
 
 /**
  * @brief Implements Algorithm 3 (PQBU) from algs2.pdf.
+ *
+ * Given three 3D vectors p, q, and z that define a special alignment frame,
+ * this function computes the matrices (P, Q, B, U) and vector u used in special alignment (SA).
+ *
+ * The result encodes the geometry of aligning the point z with the span defined by p and q.
+ * This is the preprocessing step before distance minimization in the FG pipeline (Algorithm 4).
+ *
+ * Preconditions:
+ * - p ≠ 0
+ * - q ≠ 0
+ * - p and q must be linearly independent (i.e., q ∉ span{p})
+ *
+ * @tparam Derived Eigen column vector type (e.g., Eigen::Vector3d)
+ * @param p Vector p ∈ ℝ³
+ * @param q Vector q ∈ ℝ³ (linearly independent of p)
+ * @param z Point z ∈ ℝ³
+ *
+ * @return std::tuple<P, Q, B, U, u> where:
+ *         - P, Q, B ∈ ℝ^{3×2} (matrices from v_from_v)
+ *         - U ∈ ℝ^{3×2} (skew-corrected update matrix)
+ *         - u ∈ ℝ³ (scaled normal to the span{p, q})
+ *
+ * @throws std::invalid_argument if inputs are invalid (zero or collinear).
+ *
+ * @example
+ * Eigen::Vector3d p(1, 0, 0), q(0, 1, 0), z(0.5, 0.5, 1.0);
+ * auto [P, Q, B, U, u] = pqbu(p, q, z);
  */
 template <typename Derived>
 auto pqbu(const Derived& p, const Derived& q, const Derived& z)

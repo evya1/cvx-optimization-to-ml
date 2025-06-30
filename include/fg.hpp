@@ -4,6 +4,36 @@
 #include "rotate.hpp"
 #include "pqbu.hpp"
 
+/**
+ * @brief Implements Algorithm 4 (FG) from algs2.pdf.
+ *
+ * Computes a pair of 2×2 matrices (F, G) and a scalar c ∈ ℝ which together describe
+ * a projected transformation of a special alignment from ℝ³ to a 2D plane orthogonal to ℓ.
+ *
+ * These outputs are later used in constrained optimization problems involving
+ * distance minimization to a line (e.g., Equation 172 in the paper).
+ *
+ * Preconditions:
+ * - p ≠ 0
+ * - q ∉ span{p}
+ * - ℓ ≠ 0 (direction vector for line)
+ *
+ * @tparam Derived Eigen column vector type (e.g., Eigen::Vector3d)
+ * @param p Vector p ∈ ℝ³
+ * @param q Vector q ∈ ℝ³ (linearly independent of p)
+ * @param z Query point z ∈ ℝ³
+ * @param ell Line direction ℓ ∈ ℝ³ (must be nonzero)
+ *
+ * @return std::tuple<F, G, c> where:
+ *         - F, G ∈ ℝ^{2×2} matrices
+ *         - c ∈ ℝ scalar (‖projection of u onto ℓ⊥‖)
+ *
+ * @throws std::invalid_argument if any preconditions are violated.
+ *
+ * @example
+ * Eigen::Vector3d p(1, 0, 0), q(0, 1, 0), z(1, 1, 1), ell(0, 0, 1);
+ * auto [F, G, c] = fg(p, q, z, ell);
+ */
 template <typename Derived>
 auto fg(const Derived& p, const Derived& q, const Derived& z, const Derived& ell)
 -> std::tuple<
