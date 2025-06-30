@@ -127,9 +127,21 @@ run-full-eq172:
 run-pipeline-eq172:
 	docker run --rm \
 		-v $(PWD):/app \
-		-w /app/scripts \
+		-w /app \
 		$(DOCKER_IMAGE) \
-		python3 run_eq172_pipeline.py
+		python3 scripts/run_eq172_pipeline.py
+
+run-e2e-pipeline: build
+	@echo "🚀 Starting full end-to-end pipeline..."
+	@echo "1. [C++] Generating symbolic parameters (F, G, c) from 3D data..."
+	docker run --rm \
+		-v $(PWD):/app \
+		-w /app/build \
+		$(DOCKER_IMAGE) \
+		./fg_to_json
+	@echo "\n2. [Python] Running symbolic solver on generated parameters..."
+	$(MAKE) run-pipeline-eq172
+	@echo "\n✅ End-to-end pipeline complete."
 
 
 msolve-run-%:
