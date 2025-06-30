@@ -66,5 +66,25 @@ int main() {
         return 1;
     }
 
+    std::cout << "=== Algorithm 4: FG Mock Test ===\n";
+
+    // Define inputs
+    Eigen::Vector3d p2(1, 0, 0);
+    Eigen::Vector3d q2(0, 1, 0);
+    Eigen::Vector3d z2(1, 1, 1);
+    Eigen::Vector3d ell2(0, 0, 1);
+
+    // Run FG using mock-valid inputs that satisfy the mathematical requirements
+    try {
+        auto [F2, G2, c2] = fg(p2, q2, z2, ell2);
+        std::cout << "F matrix (mock test):\n" << F2 << "\n\n";
+        std::cout << "G matrix (mock test):\n" << G2 << "\n\n";
+        std::cout << "c scalar (mock test): " << c2 << "\n\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Mock FG run failed: " << e.what() << "\n";
+        return 1;
+    }
+
+
     return 0;
 }
