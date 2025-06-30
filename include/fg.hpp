@@ -49,11 +49,13 @@ auto fg(const Derived& p, const Derived& q, const Derived& z, const Derived& ell
     using Mat2 = typename T::Mat2;
 
 
-    // Step 1: Normalize ℓ (using fixed-size for 3D ops)
+    // Step 1: Normalize ℓ (using fixed-size for 3D ops) also ensure it's a unit vector (required for projection)
     using Vec3 = Eigen::Matrix<Scalar, 3, 1>;
     Vec3 ell_unit = ell.normalized();
 
-    // Step 2: Construct orthonormal basis L such that Lᵗℓ = 0, LᵗL = I
+    // Step 2: Build orthonormal basis L for the plane orthogonal to ℓ
+    // Choose ell_perp orthogonal to ℓ in XY plane
+    // Then complete the orthonormal basis with cross product
     Vec3 ell_perp;
     if (std::abs(ell_unit(0)) < 1e-12 && std::abs(ell_unit(1)) < 1e-12) {
         ell_perp = Vec3(0, 1, 0); // (0,1,0)

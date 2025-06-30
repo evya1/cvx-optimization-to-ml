@@ -25,6 +25,7 @@ int main() {
     std::cout << "V(v) matrix:\n" << V << "\n\n";
 
 
+    // Example usage of Algorithm 3 (PQBU) with basic test inputs
     std::cout << "=== Algorithm 3: PQBU(p, q, z) ===\n";
     // Input for testing Algorithm 3
     Eigen::Vector3d z(0.5, 0.5, 1.0);
@@ -66,6 +67,7 @@ int main() {
         return 1;
     }
 
+    // Run FG (Algorithm 4) with valid mock input vectors
     std::cout << "=== Algorithm 4: FG Mock Test ===\n";
 
     // Define inputs

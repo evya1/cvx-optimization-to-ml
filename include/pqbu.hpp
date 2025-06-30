@@ -84,6 +84,8 @@ auto pqbu(const Derived& p, const Derived& q, const Derived& z)
     detail::validate_inputs(p, q, z);
 
     // Step 2: Project z onto affine subspace q + span{p - q}
+    // Project z onto the affine subspace defined by q + span{p - q}
+    // Resulting point b lies in the plane of p and q, closest to z
     Vec pq = p - q;
     Vec zq = z - q;
     Vec b  = q + (pq.dot(zq) / pq.squaredNorm()) * pq;
@@ -99,9 +101,11 @@ auto pqbu(const Derived& p, const Derived& q, const Derived& z)
     Vec v = p.cross(q);
 
     // Step 5: Skew-symmetric matrix [v]_× using inline construction
+    // Build the 3×3 skew-symmetric matrix [v]_× used for cross product as matrix multiplication
     Mat v_hat = detail::skew_symmetric(v);
 
     // Step 6: Compute U = – (‖z–b‖/‖p–q‖) · [v]_× · (P – Q)
+    // Scale and rotate the difference (P - Q) to construct the update matrix U
     double scale = (z - b).norm() / pq.norm();
     Mat U = -scale * v_hat * (P - Q);
 
