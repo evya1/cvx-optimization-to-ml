@@ -1,2 +1,2 @@
 # Obsolete
-# Please refer to "generate_eq172_system.py" in this directory
+# Please refer to "run_eq172_pipeline.py" in this directory
