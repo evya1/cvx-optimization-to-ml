@@ -3,6 +3,7 @@
 #include "rotate.hpp"
 #include "v_from_v.hpp"
 #include "pqbu.hpp"
+#include "fg.hpp"
 
 int main() {
     std::cout << "=== Algorithm 1: Rotate(w, u) ===\n";
@@ -49,6 +50,19 @@ int main() {
         std::cout << "u vector: " << u.transpose() << "\n\n";
     } catch (const std::exception& e) {
         std::cerr << "PQBU failed: " << e.what() << "\n";
+        return 1;
+    }
+
+    std::cout << "=== Algorithm 4: FG(p, q, z, ℓ) ===\n";
+    Eigen::Vector3d ell(0, 0, 1);  // ℓ defines a line in z-direction
+
+    try {
+        auto [F, G, c] = fg(p, q, z, ell);
+        std::cout << "F matrix:\n" << F << "\n\n";
+        std::cout << "G matrix:\n" << G << "\n\n";
+        std::cout << "c scalar: " << c << "\n\n";
+    } catch (const std::exception& e) {
+        std::cerr << "FG failed: " << e.what() << "\n";
         return 1;
     }
 
