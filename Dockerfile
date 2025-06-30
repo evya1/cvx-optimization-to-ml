@@ -7,7 +7,11 @@ RUN apt-get update && apt-get install -y \
     autoconf automake libtool \
     libgmp-dev libmpfr-dev \
     libeigen3-dev \
+    python3 python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Python packages
+RUN pip3 install sympy
 
 # Install Catch2 from source
 RUN git clone --branch v3.5.4 https://github.com/catchorg/Catch2.git /opt/catch2 \
