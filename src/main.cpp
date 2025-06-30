@@ -1,24 +1,56 @@
 #include <iostream>
+#include <Eigen/Dense>
 #include "rotate.hpp"
 #include "v_from_v.hpp"
+#include "pqbu.hpp"
 
 int main() {
+    std::cout << "=== Algorithm 1: Rotate(w, u) ===\n";
     Eigen::Vector2d w(1, 0);
     Eigen::Vector2d u(0, 1);
 
     auto R = rotate(w, u);
     std::cout << "Rotation matrix R:\n" << R << std::endl;
-    std::cout << "R * w = " << (R * w).transpose() << std::endl;
-    std::cout << "u = " << u.transpose() << std::endl;
+    std::cout << "R * w = " << (R * w).transpose() << " (should be close to u)\n";
+    std::cout << "u = " << u.transpose() << "\n\n";
 
-    // Use dynamic-sized vectors
-    Eigen::VectorXd p(3), q(3), v(3);
-    p << 1, 0, 0;
-    q << 0, 1, 0;
-    v = (p + q) / 2.0;
+
+    std::cout << "=== Algorithm 2: V-from-v(p, q, v) ===\n";
+    Eigen::Vector3d p(1, 0, 0);
+    Eigen::Vector3d q(0, 1, 0);
+    Eigen::Vector3d v = (p + q) / 2.0;
 
     auto V = v_from_v(p, q, v);
-    std::cout << "\nV(v) matrix from Algorithm 2:\n" << V << std::endl;
+    std::cout << "V(v) matrix:\n" << V << "\n\n";
+
+
+    std::cout << "=== Algorithm 3: PQBU(p, q, z) ===\n";
+    // Input for testing Algorithm 3
+    Eigen::Vector3d z(0.5, 0.5, 1.0);
+
+    // Check that p ≠ 0
+    if (p.isZero()) {
+        std::cerr << "Error: Vector p is zero.\n";
+        return 1;
+    }
+
+    // Check that q ∉ span{p} by verifying p × q ≠ 0
+    if (p.cross(q).isZero()) {
+        std::cerr << "Error: Vectors p and q are linearly dependent.\n";
+        return 1;
+    }
+
+    try {
+        auto [P, Q, B, U, u] = pqbu(p, q, z);
+        std::cout << "P matrix:\n" << P << "\n\n";
+        std::cout << "Q matrix:\n" << Q << "\n\n";
+        std::cout << "B matrix:\n" << B << "\n\n";
+        std::cout << "U matrix:\n" << U << "\n\n";
+        std::cout << "u vector: " << u.transpose() << "\n\n";
+    } catch (const std::exception& e) {
+        std::cerr << "PQBU failed: " << e.what() << "\n";
+        return 1;
+    }
 
     return 0;
 }
