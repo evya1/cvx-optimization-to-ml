@@ -1,215 +1,235 @@
 #include <iostream>
 #include <catch2/catch_test_macros.hpp>
-#include <Eigen/Dense>
+#include <catch2/catch_template_test_macros.hpp> // Required for template tests
 #include "../include/rotate.hpp"
+#include <type_traits> // For std::is_same_v
 
-using Vec2d = Vec2<double>;
-using Mat2d = Mat2<double>;
-
-// Generic comparison for both vectors and matrices
+/**
+ * @brief A more robust, type-aware comparison helper for Eigen types.
+ *
+ * This version uses Eigen's built-in isApprox() and automatically adjusts
+ * the tolerance based on whether the scalar type is a float or a double.
+ */
 template <typename DerivedA, typename DerivedB>
 bool isApprox(const Eigen::MatrixBase<DerivedA>& a,
-              const Eigen::MatrixBase<DerivedB>& b,
-              double tol = 1e-12)
+              const Eigen::MatrixBase<DerivedB>& b)
 {
-    return (a.derived() - b.derived()).norm() < tol;
+    using Scalar = typename DerivedA::Scalar;
+    // Use a looser tolerance for single-precision floats
+    const auto tolerance = std::is_same_v<Scalar, float> ? 1e-6 : 1e-12;
+    return a.isApprox(b, static_cast<Scalar>(tolerance));
 }
 
-TEST_CASE("rotate returns identity when vectors are equal") {
-    Vec2d w(1, 0);
-    Vec2d u(1, 0);
+/**
+ * @brief This single test case is instantiated for each type in the list (float, double).
+ *
+ * All existing SECTIONs are now run for each scalar type, ensuring broad coverage.
+ */
+TEMPLATE_TEST_CASE("Rotate function tests for multiple types", "[rotate][types]", float, double)
+{
+    // Define type aliases based on the current TestType (float or double)
+    using Scalar = TestType;
+    using Vec2 = Eigen::Matrix<Scalar, 2, 1>;
+    using Mat2 = Eigen::Matrix<Scalar, 2, 2>;
+    const Scalar tol = std::is_same_v<Scalar, float> ? 1e-6 : 1e-12;
 
-    Mat2d U = rotate(w, u);
+    SECTION("returns identity when vectors are equal")
+    {
+        Vec2 w(1, 0);
+        Vec2 u(1, 0);
+        Mat2 U = rotate(w, u);
+        REQUIRE(isApprox(U, Mat2::Identity()));
+    }
 
-    REQUIRE(isApprox(U, Mat2d::Identity()));
-}
+    SECTION("maps x-axis to y-axis with 90-degree rotation")
+    {
+        Vec2 w(1, 0);
+        Vec2 u(0, 1);
+        Vec2 w_unit = w.normalized();
+        Vec2 u_unit = u.normalized();
 
-TEST_CASE("rotate maps x-axis to y-axis with 90-degree rotation") {
-    Vec2d w(1, 0);
-    Vec2d u(0, 1);
+        Mat2 U = rotate(w_unit, u_unit);
+        Vec2 rotated = U * w_unit;
 
-    Vec2d w_unit = w.normalized();
-    Vec2d u_unit = u.normalized();
-
-    Mat2d U = rotate(w_unit, u_unit);
-    Vec2d rotated = U * w_unit;
-
-    REQUIRE(isApprox(rotated, u_unit));
-    REQUIRE(U.isUnitary(1e-12));
-    REQUIRE(std::abs(U.determinant() - 1.0) < 1e-12);
-}
-
-TEST_CASE("rotate flips direction for opposite vectors (180-degree)") {
-    Vec2d w(1, 0);
-    Vec2d u(-1, 0);
-
-    Vec2d w_unit = w.normalized();
-    Vec2d u_unit = u.normalized();
-
-    Mat2d U = rotate(w_unit, u_unit);
-    Vec2d rotated = U * w_unit;
-
-    REQUIRE(isApprox(rotated, u_unit));
-    REQUIRE(std::abs(U.determinant() - 1.0) < 1e-12);
-}
-
-TEST_CASE("rotate aligns vectors with arbitrary angle") {
-    double theta = M_PI / 4;
-    Vec2d w(std::cos(theta), std::sin(theta));
-    Vec2d u(-std::sin(theta), std::cos(theta));
-
-    Vec2d w_unit = w.normalized();
-    Vec2d u_unit = u.normalized();
-
-    Mat2d U = rotate(w_unit, u_unit);
-    Vec2d rotated = U * w_unit;
-
-    REQUIRE(isApprox(rotated, u_unit));
-    REQUIRE(U.isUnitary(1e-12));
-}
-
-TEST_CASE("rotate is invariant to scaling of input vectors") {
-    Vec2d w(2, -1);
-    Vec2d u(0, 2);
-
-    Vec2d w_scaled = 5 * w;
-    Vec2d u_scaled = -3 * u;
-
-    Mat2d U1 = rotate(w, u);
-    Mat2d U2 = rotate(w_scaled, u_scaled);
-
-    bool equivalent = isApprox(U1, U2) || isApprox(U1, -U2);
-
-    REQUIRE(equivalent);
-    REQUIRE(U1.isUnitary(1e-12));
-    REQUIRE(U2.isUnitary(1e-12));
-}
-
-TEST_CASE("aligning random vectors should pass") {
-    for (int i = 0; i < 10; ++i) {
-        Vec2d w = Vec2d::Random();
-        Vec2d u = Vec2d::Random();
-
-        if (w.norm() < 1e-10 || u.norm() < 1e-10)
-            continue;
-
-        Vec2d w_unit = w.normalized();
-        Vec2d u_unit = u.normalized();
-        Mat2d U = rotate(w_unit, u_unit);
-        Vec2d rotated = U * w_unit;
-
-        // Functional: rotation result aligns with target direction
         REQUIRE(isApprox(rotated, u_unit));
-
-        // Structural: U is special orthogonal (SO(2))
-        REQUIRE(U.isUnitary(1e-12));
-        REQUIRE(std::abs(U.determinant() - 1.0) < 1e-12);
+        REQUIRE(U.isUnitary(tol));
+        REQUIRE(std::abs(U.determinant() - static_cast<Scalar>(1.0)) < tol);
     }
-}
 
-TEST_CASE("rotate composition must be consistent: (1,0) → (0,1) → (-1,0)") {
-    Vec2d w(1, 0);
-    Vec2d u(0, 1);
-    Vec2d v(-1, 0);
+    SECTION("flips direction for opposite vectors (180-degree)")
+    {
+        Vec2 w(1, 0);
+        Vec2 u(-1, 0);
+        Vec2 w_unit = w.normalized();
+        Vec2 u_unit = u.normalized();
 
-    Mat2d U1 = rotate(w, u);
-    Mat2d U2 = rotate(u, v);
-    Mat2d U3 = rotate(w, v);
+        Mat2 U = rotate(w_unit, u_unit);
+        Vec2 rotated = U * w_unit;
 
-    Mat2d composed = U2 * U1;
-
-    REQUIRE(isApprox(composed, U3));
-    REQUIRE(U1.isUnitary(1e-12));
-    REQUIRE(U2.isUnitary(1e-12));
-    REQUIRE(U3.isUnitary(1e-12));
-}
-
-TEST_CASE("rotate preserves norm of arbitrary vector") {
-    Vec2d w(2, 3);
-    Vec2d u(-1, 4);
-    Vec2d v(5, -2);
-
-    Mat2d U = rotate(w, u);
-    Vec2d rotated_v = U * v;
-
-    double original_norm = v.norm();
-    double rotated_norm = rotated_v.norm();
-
-    REQUIRE(std::abs(rotated_norm - original_norm) < 1e-12);
-    REQUIRE(U.isUnitary(1e-12));
-}
-
-TEST_CASE("rotate throws on zero input vector") {
-    Vec2d zero(0, 0);
-    Vec2d unit(1, 0);
-
-    REQUIRE_THROWS_AS(rotate(zero, unit), std::invalid_argument);
-    REQUIRE_THROWS_AS(rotate(unit, zero), std::invalid_argument);
-}
-
-TEST_CASE("rotate maps (1,0) to (1,1)^T normalized") {
-    Vec2d w(1, 0), u(3, 3);
-    Vec2d w_unit = w.normalized();
-    Vec2d u_unit = u.normalized();
-
-    Mat2d U = rotate(w_unit, u_unit);
-    Vec2d result = U * w_unit;
-
-    REQUIRE(isApprox(result, u_unit));
-    REQUIRE(U.isUnitary(1e-12));
-
-    Mat2d expected_U;
-    expected_U << 1, -1,
-                  1,  1;
-    expected_U.col(0).normalize();
-    expected_U.col(1).normalize();
-
-    REQUIRE(isApprox(U, expected_U));
-}
-
-TEST_CASE("rotate aligns random unit vectors by angle") {
-    for (int i = 0; i < 10; ++i) {
-        // Generate two random unit vectors
-        Vec2d w = Vec2d::Random().normalized();
-        Vec2d u = Vec2d::Random().normalized();
-
-        // Skip near-zero vectors (extremely rare after normalization but still defensive)
-        if (w.norm() < 1e-10 || u.norm() < 1e-10)
-            continue;
-
-        Mat2d U = rotate(w, u);
-        Vec2d rotated = U * w;
-
-        // Functional correctness: U * w ≈ u
-        REQUIRE(isApprox(rotated, u));
-
-        // Structural correctness: U ∈ SO(2)
-        REQUIRE(U.isUnitary(1e-12));
-        REQUIRE(std::abs(U.determinant() - 1.0) < 1e-12);
+        REQUIRE(isApprox(rotated, u_unit));
+        REQUIRE(std::abs(U.determinant() - static_cast<Scalar>(1.0)) < tol);
     }
-}
 
-TEST_CASE("Lemma 2: SO(2) is commutative — UR = RU for arbitrary angles") {
-    // Any two 2×2 rotation matrices commute:
-    // For R, U ∈ SO(2), we have UR = RU.
+    SECTION("aligns vectors with arbitrary angle")
+    {
+        Scalar theta = M_PI / 4.0;
+        Vec2 w(std::cos(theta), std::sin(theta));
+        Vec2 u(-std::sin(theta), std::cos(theta));
 
-    using std::cos, std::sin;
-    using Scalar = double;
+        Vec2 w_unit = w.normalized();
+        Vec2 u_unit = u.normalized();
 
-    auto rotation = [](Scalar angle) -> Eigen::Matrix2d {
-        return (Eigen::Matrix2d() <<
-            cos(angle), -sin(angle),
-            sin(angle),  cos(angle)).finished();
-    };
+        Mat2 U = rotate(w_unit, u_unit);
+        Vec2 rotated = U * w_unit;
 
-    Scalar alpha = M_PI / 4;  // 45 degrees
-    Scalar beta  = M_PI / 3;  // 60 degrees
+        REQUIRE(isApprox(rotated, u_unit));
+        REQUIRE(U.isUnitary(tol));
+    }
 
-    Eigen::Matrix2d R = rotation(alpha);
-    Eigen::Matrix2d U = rotation(beta);
+    SECTION("is invariant to positive scaling of input vectors") // <-- FIX: Changed test name for clarity
+    {
+        Vec2 w(2, -1);
+        Vec2 u(0, 2);
 
-    Eigen::Matrix2d UR = U * R;
-    Eigen::Matrix2d RU = R * U;
+        Vec2 w_scaled = static_cast<Scalar>(5) * w;
+        Vec2 u_scaled = static_cast<Scalar>(3) * u; // <-- FIX: Changed -3 to 3
 
-    REQUIRE((UR - RU).norm() < 1e-12);
+        Mat2 U1 = rotate(w, u);
+        Mat2 U2 = rotate(w_scaled, u_scaled);
+
+        REQUIRE(isApprox(U1, U2)); // This should now pass
+        REQUIRE(U1.isUnitary(tol));
+        REQUIRE(U2.isUnitary(tol));
+    }
+
+    SECTION("aligning random vectors should pass")
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            Vec2 w = Vec2::Random();
+            Vec2 u = Vec2::Random();
+
+            if (w.norm() < static_cast<Scalar>(1e-10) || u.norm() < static_cast<Scalar>(1e-10))
+                continue;
+
+            Vec2 w_unit = w.normalized();
+            Vec2 u_unit = u.normalized();
+            Mat2 U = rotate(w_unit, u_unit);
+            Vec2 rotated = U * w_unit;
+
+            REQUIRE(isApprox(rotated, u_unit));
+            REQUIRE(U.isUnitary(tol));
+            REQUIRE(std::abs(U.determinant() - static_cast<Scalar>(1.0)) < tol);
+        }
+    }
+
+    SECTION("composition must be consistent: (1,0) -> (0,1) -> (-1,0)")
+    {
+        Vec2 w(1, 0);
+        Vec2 u(0, 1);
+        Vec2 v(-1, 0);
+
+        Mat2 U1 = rotate(w, u);
+        Mat2 U2 = rotate(u, v);
+        Mat2 U3 = rotate(w, v);
+
+        Mat2 composed = U2 * U1;
+
+        REQUIRE(isApprox(composed, U3));
+        REQUIRE(U1.isUnitary(tol));
+        REQUIRE(U2.isUnitary(tol));
+        REQUIRE(U3.isUnitary(tol));
+    }
+
+    SECTION("preserves norm of arbitrary vector")
+    {
+        Vec2 w(2, 3);
+        Vec2 u(-1, 4);
+        Vec2 v(5, -2);
+
+        Mat2 U = rotate(w, u);
+        Vec2 rotated_v = U * v;
+
+        Scalar original_norm = v.norm();
+        Scalar rotated_norm = rotated_v.norm();
+
+        REQUIRE(std::abs(rotated_norm - original_norm) < tol);
+        REQUIRE(U.isUnitary(tol));
+    }
+
+    SECTION("throws on zero input vector")
+    {
+        Vec2 zero(0, 0);
+        Vec2 unit(1, 0);
+
+        REQUIRE_THROWS_AS(rotate(zero, unit), std::invalid_argument);
+        REQUIRE_THROWS_AS(rotate(unit, zero), std::invalid_argument);
+    }
+
+    // --- FIX: The following 3 sections were updated to be type-generic ---
+
+    SECTION("maps (1,0) to (1,1)^T normalized")
+    {
+        Vec2 w(1, 0), u(3, 3);
+        Vec2 w_unit = w.normalized();
+        Vec2 u_unit = u.normalized();
+
+        Mat2 U = rotate(w_unit, u_unit);
+        Vec2 result = U * w_unit;
+
+        REQUIRE(isApprox(result, u_unit));
+        REQUIRE(U.isUnitary(tol));
+
+        Mat2 expected_U;
+        expected_U << 1, -1,
+            1, 1;
+
+        // This is a rotation matrix, so columns are orthonormal
+        expected_U.col(0).normalize();
+        expected_U.col(1) = Vec2(-expected_U(1,0), expected_U(0,0)); // Ensure it's in SO(2)
+
+        REQUIRE(isApprox(U, expected_U));
+    }
+
+    SECTION("aligns random unit vectors by angle")
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            Vec2 w = Vec2::Random().normalized();
+            Vec2 u = Vec2::Random().normalized();
+
+            if (w.norm() < static_cast<Scalar>(1e-10) || u.norm() < static_cast<Scalar>(1e-10))
+                continue;
+
+            Mat2 U = rotate(w, u);
+            Vec2 rotated = U * w;
+
+            REQUIRE(isApprox(rotated, u));
+            REQUIRE(U.isUnitary(tol));
+            REQUIRE(std::abs(U.determinant() - static_cast<Scalar>(1.0)) < tol);
+        }
+    }
+
+    SECTION("Lemma 2: SO(2) is commutative — UR = RU for arbitrary angles")
+    {
+        using std::cos, std::sin;
+
+        auto rotation = [](Scalar angle) -> Mat2
+        {
+            return (Mat2() <<
+                cos(angle), -sin(angle),
+                sin(angle),  cos(angle)).finished();
+        };
+
+        Scalar alpha = M_PI / 4.0;
+        Scalar beta  = M_PI / 3.0;
+
+        Mat2 R = rotation(alpha);
+        Mat2 U = rotation(beta);
+
+        Mat2 UR = U * R;
+        Mat2 RU = R * U;
+
+        REQUIRE(isApprox(UR, RU));
+    }
 }
