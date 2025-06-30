@@ -52,20 +52,24 @@ RUN cmake -Bbuild -H. && cmake --build build
 # If the tests fail, the docker build process will stop.
 RUN /app/build/test-runner
 
-# === STAGE 2: Runtime Stage ===
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
-    libgmp10 libmpfr6 libgomp1 && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libgmp10 libmpfr6 libgomp1 \
+    python3 python3-pip \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy final binary and msolve tool
-COPY --from=builder /app/build/cvx-optimization-to-ml /cvx-optimization-to-ml
+# Copy final binaries
+COPY --from=builder /cvx-optimization-to-ml /cvx-optimization-to-ml
+COPY --from=builder /fg_to_json /fg_to_json
+COPY --from=builder /app/build/fg_to_json /app/build/fg_to_json
 COPY --from=builder /usr/local/lib/libmsolve* /usr/local/lib/
 COPY --from=builder /usr/local/bin/msolve /usr/local/bin/msolve
 COPY --from=builder /usr/local/lib/libflint* /usr/local/lib/
+COPY --from=builder /app/scripts /app/scripts
+COPY --from=builder /app/scripts/run_eq172_pipeline.py /app/scripts/run_eq172_pipeline.py
+
 ENV LD_LIBRARY_PATH=/usr/local/lib
 RUN ldconfig
 
-
-# Default run command
 CMD ["/cvx-optimization-to-ml"]
