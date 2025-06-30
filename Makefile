@@ -54,14 +54,6 @@ test: build
 	@echo "🧪 Running all unit tests..."
 	./$(BUILD_DIR)/test-runner
 
-generate-ms:
-	@echo "🧠 Generating .ms file via SymPy..."
-	docker run --rm \
-		-v $(PWD):/app \
-		-w /app/scripts \
-		$(DOCKER_IMAGE) \
-		python3 generate_eq172_system.py
-
 dev: test run
 
 
@@ -125,10 +117,6 @@ define RUN_MSOLVE
 		-o /outputs/$(2)
 endef
 
-run-eq172: generate-ms msolve-run-eq172_input
-	@echo "✅ Ran eq172_input.ms through msolve"
-	@cat ms_outputs/eq172_input.out
-
 run-full-eq172:
 	docker run --rm \
 		-v $(PWD):/app \
@@ -149,7 +137,7 @@ msolve-run-%:
 
 # ========== CI & Meta Targets ==========
 
-ci: docker-rebuild generate-ms docker-run-tests docker-run
+ci: docker-rebuild run-pipeline-eq172 docker-run-tests docker-run
 	@echo "✅ CI validation complete."
 
 help:

@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
     python3 python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Python packages
-RUN pip3 install sympy
+COPY scripts/requirements.txt /app/scripts/requirements.txt
+RUN pip3 install -r /app/scripts/requirements.txt
 
 # Install Catch2 from source
 RUN git clone --branch v3.5.4 https://github.com/catchorg/Catch2.git /opt/catch2 \
