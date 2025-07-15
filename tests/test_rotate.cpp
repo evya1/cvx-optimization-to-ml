@@ -1,8 +1,8 @@
 #include <iostream>
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/catch_template_test_macros.hpp> // Required for template tests
+#include <catch2/catch_template_test_macros.hpp>
 #include "../include/rotate.hpp"
-#include <type_traits> // For std::is_same_v
+#include <type_traits>
 
 /**
  * @brief A more robust, type-aware comparison helper for Eigen types.
@@ -22,7 +22,6 @@ bool isApprox(const Eigen::MatrixBase<DerivedA>& a,
 
 /**
  * @brief This single test case is instantiated for each type in the list (float, double).
- *
  * All existing SECTIONs are now run for each scalar type, ensuring broad coverage.
  */
 TEMPLATE_TEST_CASE("Rotate function tests for multiple types", "[rotate][types]", float, double)
@@ -86,18 +85,18 @@ TEMPLATE_TEST_CASE("Rotate function tests for multiple types", "[rotate][types]"
         REQUIRE(U.isUnitary(tol));
     }
 
-    SECTION("is invariant to positive scaling of input vectors") // <-- FIX: Changed test name for clarity
+    SECTION("is invariant to positive scaling of input vectors")
     {
         Vec2 w(2, -1);
         Vec2 u(0, 2);
 
         Vec2 w_scaled = static_cast<Scalar>(5) * w;
-        Vec2 u_scaled = static_cast<Scalar>(3) * u; // <-- FIX: Changed -3 to 3
+        Vec2 u_scaled = static_cast<Scalar>(3) * u;
 
         Mat2 U1 = rotate(w, u);
         Mat2 U2 = rotate(w_scaled, u_scaled);
 
-        REQUIRE(isApprox(U1, U2)); // This should now pass
+        REQUIRE(isApprox(U1, U2));
         REQUIRE(U1.isUnitary(tol));
         REQUIRE(U2.isUnitary(tol));
     }
