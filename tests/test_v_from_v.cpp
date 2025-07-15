@@ -61,10 +61,10 @@ TEST_CASE("v_from_v algorithm", "[v_from_v]") {
         VecD v = q; // v is identical to q
 
         // The calculated result is not a zero matrix due to the (c*U-I) term.
-        MatD expected_V(3, 2); // <-- CHANGED
-        expected_V << 0,  (p-q).norm() * (-p.normalized().dot(q)), // <-- CHANGED
-                      0, -(p-q).norm(),                           // <-- CHANGED
-                      0,  0;                                      // <-- CHANGED
+        MatD expected_V(3, 2); 
+        expected_V << 0,  (p-q).norm() * (-p.normalized().dot(q)), 
+                      0, -(p-q).norm(),                           
+                      0,  0;                                      
 
         MatD V = v_from_v(p, q, v);
 
@@ -83,12 +83,12 @@ TEST_CASE("v_from_v algorithm", "[v_from_v]") {
         MatD V = v_from_v(p, q, v);
 
         // This expected value has been updated to match the current algorithm's output.
-        MatD expected_V(4, 2); // <-- CHANGED
-        double val = 1.0 / std::sqrt(2.0); // <-- CHANGED
-        expected_V << val, 0,    // <-- CHANGED
-                      val, 0,    // <-- CHANGED
-                      0,  -val,  // <-- CHANGED
-                      0,  -val;  // <-- CHANGED
+        MatD expected_V(4, 2); 
+        double val = 1.0 / std::sqrt(2.0); 
+        expected_V << val, 0,    
+                      val, 0,    
+                      0,  -val,  
+                      0,  -val;  
 
 
         REQUIRE(V.rows() == 4);
