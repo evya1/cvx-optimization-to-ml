@@ -3,7 +3,8 @@
 #include <Eigen/Dense>
 #include <stdexcept>
 
-// --- Private Implementation Namespace for Helper Functions ---
+// Private Implementation Namespace for Helper Functions
+
 namespace detail {
 
 /**
@@ -42,12 +43,11 @@ auto create_rotation_basis_from_vector(const Eigen::MatrixBase<Derived>& v)
     return basis;
 }
 
-} // namespace detail
+}
 
 
 /**
  * @brief Returns the unique 2×2 rotation matrix that maps one direction vector to another.
- * (Full Doxygen documentation remains the same)
  */
 template <typename DerivedW, typename DerivedU>
 auto rotate(const Eigen::MatrixBase<DerivedW>& w,
