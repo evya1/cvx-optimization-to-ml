@@ -2,7 +2,7 @@
 
 #include <Eigen/Dense>
 #include <stdexcept>
-#include "v_from_v.hpp"     // your implementation
+#include "v_from_v.hpp"
 
 namespace detail {
     template <typename Derived>

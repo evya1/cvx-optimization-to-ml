@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <limits>
 
-// --- Type Aliases and Traits (Unchanged) ---
+// Type Aliases
 template <typename Scalar>
 using VecD = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 template <typename Scalar>
@@ -24,7 +24,7 @@ struct EigenTraits {
     using Mat2   = ::Mat2<Scalar>;
 };
 
-// --- Private Implementation Namespace for Helper Functions ---
+// Private Implementation Namespace for Helper Functions
 namespace detail {
 
 /**
@@ -85,11 +85,10 @@ auto compute_2d_alignment_matrix(const typename T::Vec2& p_2d, const typename T:
     return M_2d;
 }
 
-} // namespace detail
+}
 
 /**
  * @brief Constructs matrix V(v) ∈ ℝ^(dx2) as defined in Algorithm 2.
- * (Full Doxygen documentation remains the same)
  */
 template <typename Derived>
 auto v_from_v(const Derived& p, const Derived& q, const Derived& v)
